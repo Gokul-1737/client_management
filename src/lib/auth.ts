@@ -1,0 +1,92 @@
+// TaskFlow AI - Unified Authentication & Session Management
+
+import { UserRole, Profile } from './types'
+
+export const DEMO_USERS: Record<string, Profile> = {
+  admin: {
+    id: 'u0000000-0000-0000-0000-000000000001',
+    email: 'admin@taskflow.ai',
+    full_name: 'Alex Rivera',
+    role: 'ADMIN',
+    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    phone: '+1 (555) 019-2834',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  client: {
+    id: 'u0000000-0000-0000-0000-000000000002',
+    email: 'client@abc.com',
+    full_name: 'Sarah Jenkins',
+    role: 'CLIENT',
+    avatar_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150',
+    phone: '+1 (555) 018-7742',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  employee_karthik: {
+    id: 'u0000000-0000-0000-0000-000000000003',
+    email: 'karthik@taskflow.ai',
+    full_name: 'Karthik Raja',
+    role: 'EMPLOYEE',
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+    phone: '+1 (555) 014-9921',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  employee_elena: {
+    id: 'u0000000-0000-0000-0000-000000000004',
+    email: 'elena@taskflow.ai',
+    full_name: 'Elena Rostova',
+    role: 'EMPLOYEE',
+    avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+    phone: '+1 (555) 012-4481',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  employee_marcus: {
+    id: 'u0000000-0000-0000-0000-000000000005',
+    email: 'marcus@taskflow.ai',
+    full_name: 'Marcus Vance',
+    role: 'EMPLOYEE',
+    avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
+    phone: '+1 (555) 017-8833',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+}
+
+export function getCurrentUser(): Profile | null {
+  if (typeof window === 'undefined') return null
+  const stored = localStorage.getItem('taskflow_user')
+  if (stored) {
+    try {
+      return JSON.parse(stored)
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
+export function setCurrentUser(user: Profile | null) {
+  if (typeof window === 'undefined') return
+  if (user) {
+    localStorage.setItem('taskflow_user', JSON.stringify(user))
+    // Set cookie for middleware access
+    document.cookie = `taskflow_role=${user.role}; path=/; max-age=604800; SameSite=Lax`
+    document.cookie = `taskflow_user_id=${user.id}; path=/; max-age=604800; SameSite=Lax`
+    document.cookie = `taskflow_user_email=${user.email}; path=/; max-age=604800; SameSite=Lax`
+  } else {
+    localStorage.removeItem('taskflow_user')
+    document.cookie = 'taskflow_role=; path=/; max-age=0'
+    document.cookie = 'taskflow_user_id=; path=/; max-age=0'
+    document.cookie = 'taskflow_user_email=; path=/; max-age=0'
+  }
+}
+
+export function logout() {
+  setCurrentUser(null)
+  if (typeof window !== 'undefined') {
+    window.location.href = '/login'
+  }
+}
