@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { Search, Bell, Zap, LogOut } from 'lucide-react'
-import { getCurrentUser, DEMO_USERS, logout } from '@/lib/auth'
+import { getCurrentUser, getDemoUserForRole, logout } from '@/lib/auth'
 import { TaskFlowStore } from '@/lib/store'
 import { Notification, Profile } from '@/lib/types'
 import { Avatar } from '@/components/ui/avatar'
@@ -29,11 +29,11 @@ export function PortalHeader({ title, subtitle }: PortalHeaderProps) {
     let u = getCurrentUser()
     if (!u) {
       if (pathname.startsWith('/client')) {
-        u = DEMO_USERS.client
+        u = getDemoUserForRole('CLIENT')
       } else if (pathname.startsWith('/employee')) {
-        u = DEMO_USERS.employee_karthik
+        u = getDemoUserForRole('EMPLOYEE')
       } else {
-        u = DEMO_USERS.admin
+        u = getDemoUserForRole('ADMIN')
       }
     }
     setCurUser(u)
@@ -45,7 +45,11 @@ export function PortalHeader({ title, subtitle }: PortalHeaderProps) {
     reloadData()
     const handleUpdate = () => reloadData()
     window.addEventListener('taskflow_store_updated', handleUpdate)
-    return () => window.removeEventListener('taskflow_store_updated', handleUpdate)
+    window.addEventListener('taskflow_profile_updated', handleUpdate)
+    return () => {
+      window.removeEventListener('taskflow_store_updated', handleUpdate)
+      window.removeEventListener('taskflow_profile_updated', handleUpdate)
+    }
   }, [])
 
   const unreadCount = notifications.filter(n => !n.read).length
@@ -228,7 +232,9 @@ export function PortalHeader({ title, subtitle }: PortalHeaderProps) {
                 </Link>
                 <div className="my-1 border-t border-slate-100" />
                 <button
-                  onClick={() => logout()}
+                  onClick={() => {
+                    void logout()
+                  }}
                   className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-rose-600 hover:bg-rose-50 font-medium"
                 >
                   <LogOut className="w-3.5 h-3.5" /> Sign Out

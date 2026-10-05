@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/toast'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { 
   Eye, 
@@ -24,6 +23,9 @@ import {
   Bot
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { BrandLogo } from '@/components/layout/brand-logo'
+import { setCurrentUser } from '@/lib/auth'
+import type { Profile } from '@/lib/types'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -139,13 +141,13 @@ export default function SignupPage() {
         return
       }
 
-      const { error: profileError } = await supabase.from('profiles').insert({
+      const { error: profileError } = await supabase.from('profiles').upsert({
         id: data.user.id,
         email: data.user.email || form.email.trim().toLowerCase(),
         full_name: form.fullName.trim(),
         role: 'CLIENT',
         phone: form.phone.trim() || null,
-      })
+      }, { onConflict: 'id' })
 
       if (profileError) {
         toastError('Profile setup failed', 'Your account was created, but we could not create its profile. Please contact an administrator.')
@@ -153,7 +155,55 @@ export default function SignupPage() {
         return
       }
 
-      success('Account created', `Welcome to TaskFlow AI, ${form.fullName}.`)
+      const { data: existingCompany, error: companyLookupError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('created_by', data.user.id)
+        .maybeSingle()
+
+      if (companyLookupError) {
+        toastError('Company setup failed', 'Your account was created, but we could not load your company details.')
+        return
+      }
+
+      const { data: company, error: companyError } = existingCompany
+        ? { data: existingCompany, error: null }
+        : await supabase
+          .from('companies')
+          .insert({
+            name: form.companyName.trim(),
+            created_by: data.user.id,
+          })
+          .select('id')
+          .single()
+
+      if (companyError || !company) {
+        toastError('Company setup failed', 'Your account was created, but we could not save your company details.')
+        return
+      }
+
+      const { error: membershipError } = await supabase.from('company_members').upsert({
+        company_id: company.id,
+        profile_id: data.user.id,
+        role: 'OWNER',
+      }, { onConflict: 'company_id,profile_id' })
+
+      if (membershipError) {
+        toastError('Company membership setup failed', 'Your account was created, but we could not connect you to your company.')
+        return
+      }
+
+      const userProfile: Profile = {
+        id: data.user.id,
+        email: data.user.email || form.email.trim().toLowerCase(),
+        full_name: form.fullName.trim(),
+        role: 'CLIENT',
+        phone: form.phone.trim() || undefined,
+        company_name: form.companyName.trim(),
+        avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(form.fullName.trim())}`,
+      }
+      setCurrentUser(userProfile)
+      success('Account created', `Welcome to Probyzaar Technologies, ${form.fullName}.`)
       router.push('/client/dashboard')
       router.refresh()
     } catch {
@@ -175,15 +225,7 @@ export default function SignupPage() {
 
         {/* Logo */}
         <div className="relative">
-          <Link href="/" className="inline-flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner group-hover:scale-105 transition-transform">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <span className="text-2xl font-bold tracking-tight">TaskFlow AI</span>
-              <span className="block text-xs text-indigo-200 tracking-wide font-medium uppercase">Client Portal Setup</span>
-            </div>
-          </Link>
+          <BrandLogo portal="Client portal setup" dark />
         </div>
 
         {/* Hero content */}
@@ -256,7 +298,7 @@ export default function SignupPage() {
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-sm">
               <Zap className="w-5 h-5" />
             </div>
-            <span className="text-xl font-bold text-slate-900">TaskFlow AI</span>
+            <BrandLogo portal="Client portal setup" />
           </div>
 
           {/* Form Header */}

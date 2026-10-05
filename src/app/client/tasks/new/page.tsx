@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
+import { getCurrentUser, getDemoUserForRole } from '@/lib/auth'
 import {
   Sparkles,
   UploadCloud,
@@ -38,6 +39,48 @@ export default function CreateTaskPage() {
   const [files, setFiles] = useState<Array<{ name: string; size: string }>>([])
   const [submitting, setSubmitting] = useState(false)
   const [submittedTask, setSubmittedTask] = useState<any | null>(null)
+  const [clientIdentity, setClientIdentity] = useState(() => {
+    const user = getCurrentUser() || getDemoUserForRole('CLIENT')
+    const storedCompany = typeof window !== 'undefined'
+      ? window.localStorage.getItem('taskflow_company_profile')
+      : null
+
+    try {
+      const company = storedCompany ? JSON.parse(storedCompany) as { name?: string } : null
+      return {
+        id: user.id,
+        name: company?.name || user.company_name || user.full_name || 'Client organization',
+        email: user.email || '',
+      }
+    } catch {
+      return {
+        id: user.id,
+        name: user.company_name || user.full_name || 'Client organization',
+        email: user.email || '',
+      }
+    }
+  })
+
+  useEffect(() => {
+    const refreshClientIdentity = () => {
+      const user = getCurrentUser() || getDemoUserForRole('CLIENT')
+      let companyName = user.company_name
+      try {
+        const stored = window.localStorage.getItem('taskflow_company_profile')
+        companyName = stored ? (JSON.parse(stored) as { name?: string }).name || companyName : companyName
+      } catch {
+        // Keep the authenticated profile name when no local company profile is available.
+      }
+      setClientIdentity({
+        id: user.id,
+        name: companyName || user.full_name || 'Client organization',
+        email: user.email || '',
+      })
+    }
+
+    window.addEventListener('taskflow_profile_updated', refreshClientIdentity)
+    return () => window.removeEventListener('taskflow_profile_updated', refreshClientIdentity)
+  }, [])
 
   // AI Matching preview state
   const [aiAnalysis, setAiAnalysis] = useState<{
@@ -109,8 +152,9 @@ export default function CreateTaskPage() {
         start_date: startDate,
         end_date: endDate,
         required_skills: selectedSkills,
-        client_name: 'Acme Corporation',
-        client_email: 'client@abc.com',
+        client_name: clientIdentity.name,
+        client_email: clientIdentity.email,
+        created_by: clientIdentity.id,
       })
 
       // Add attached files
@@ -121,7 +165,7 @@ export default function CreateTaskPage() {
           size: f.size,
           type: 'document',
           category: 'CLIENT_ATTACHMENT',
-          uploaded_by: 'Sarah Jenkins',
+          uploaded_by: clientIdentity.name,
         })
       })
 

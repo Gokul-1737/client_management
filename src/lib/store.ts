@@ -1,4 +1,4 @@
-// TaskFlow AI - Central Data Store & Automation Engine
+// Probyzaar Technologies - Central Data Store & Automation Engine
 'use client'
 
 import {
@@ -433,7 +433,44 @@ function saveToStorage<T>(key: string, data: T) {
 export class TaskFlowStore {
   // Tasks
   static getTasks(): Task[] {
-    return loadFromStorage('tasks', DEFAULT_TASKS)
+    const tasks = loadFromStorage('tasks', DEFAULT_TASKS)
+
+    if (typeof window === 'undefined') return tasks
+
+    try {
+      const storedCompany = window.localStorage.getItem('taskflow_company_profile')
+      if (!storedCompany) return tasks
+
+      const company = JSON.parse(storedCompany) as { name?: string }
+      const companyName = company.name?.trim()
+      if (!companyName) return tasks
+
+      let changed = false
+      const migratedTasks = tasks.map(task => {
+        const isLegacyClientTask =
+          task.created_by === DEMO_USERS.client.id ||
+          task.client_email === DEMO_USERS.client.email ||
+          task.client_name?.startsWith('Acme Corporation')
+
+        if (!isLegacyClientTask || task.client_name === companyName) return task
+
+        changed = true
+        return {
+          ...task,
+          client_name: companyName,
+          client_email: task.client_email || DEMO_USERS.client.email,
+          updated_at: new Date().toISOString(),
+        }
+      })
+
+      if (changed) {
+        window.localStorage.setItem('taskflow_tasks', JSON.stringify(migratedTasks))
+      }
+
+      return migratedTasks
+    } catch {
+      return tasks
+    }
   }
 
   static getTask(id: string): Task | undefined {
@@ -442,6 +479,15 @@ export class TaskFlowStore {
 
   static saveTasks(tasks: Task[]) {
     saveToStorage('tasks', tasks)
+  }
+
+  static deleteTask(taskId: string): boolean {
+    const tasks = this.getTasks()
+    const nextTasks = tasks.filter(task => task.id !== taskId && task.task_number !== taskId)
+    if (nextTasks.length === tasks.length) return false
+
+    this.saveTasks(nextTasks)
+    return true
   }
 
   static createTask(taskData: Partial<Task>): Task {
@@ -459,8 +505,8 @@ export class TaskFlowStore {
       priority: taskData.priority || 'MEDIUM',
       status: 'SUBMITTED',
       progress_percentage: 0,
-      client_name: taskData.client_name || 'Acme Corporation',
-      client_email: taskData.client_email || 'client@abc.com',
+      client_name: taskData.client_name || taskData.client_email || 'Client organization',
+      client_email: taskData.client_email || '',
       required_skills: taskData.required_skills || [],
       start_date: taskData.start_date || new Date().toISOString().split('T')[0],
       end_date: taskData.end_date || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],

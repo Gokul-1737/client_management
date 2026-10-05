@@ -55,7 +55,7 @@ export default function ResetPasswordPage() {
           <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm">
             <Zap className="w-5 h-5" />
           </div>
-          <span className="text-xl font-bold text-slate-900 tracking-tight">TaskFlow AI</span>
+          <span className="text-xl font-bold text-slate-900 tracking-tight">Probyzaar Technologies</span>
         </div>
 
         {!completed ? (

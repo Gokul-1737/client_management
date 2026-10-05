@@ -7,19 +7,27 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar } from '@/components/ui/avatar'
 import { useToast } from '@/components/ui/toast'
-import { DEMO_USERS } from '@/lib/auth'
+import { DEMO_USERS, getCurrentUser, getDemoUserForRole, updateProfile } from '@/lib/auth'
+import type { Profile } from '@/lib/types'
 import { User, Mail, Phone, Building, Camera, Shield } from 'lucide-react'
 
 export default function ClientProfilePage() {
-  const { success } = useToast()
-  const [fullName, setFullName] = useState(DEMO_USERS.client.full_name)
-  const [email, setEmail] = useState(DEMO_USERS.client.email)
-  const [phone, setPhone] = useState(DEMO_USERS.client.phone || '+1 (555) 018-7742')
+  const { success, error: toastError } = useToast()
+  const [profile, setProfile] = useState<Profile>(() => getCurrentUser() || getDemoUserForRole('CLIENT'))
+  const [fullName, setFullName] = useState(profile.full_name || '')
+  const [email, setEmail] = useState(profile.email || '')
+  const [phone, setPhone] = useState(profile.phone || '')
   const [title, setTitle] = useState('Director of Product Innovation')
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    success('Profile Updated', 'Your personal account profile details have been saved.')
+    try {
+      const next = await updateProfile(profile, { full_name: fullName.trim(), email: email.trim(), phone: phone.trim(), title })
+      setProfile(next)
+      success('Profile Updated', 'Your personal account profile details have been saved.')
+    } catch {
+      toastError('Profile not saved', 'We could not save your changes. Please try again.')
+    }
   }
 
   return (
@@ -36,7 +44,7 @@ export default function ClientProfilePage() {
             <div className="relative">
               <Avatar
                 name={fullName}
-                src={DEMO_USERS.client.avatar_url}
+                src={profile.avatar_url || DEMO_USERS.client.avatar_url}
                 size="xl"
                 className="w-24 h-24 text-2xl"
               />

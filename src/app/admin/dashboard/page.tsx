@@ -56,7 +56,7 @@ export default function AdminDashboardPage() {
     pendingAssignment.forEach(task => {
       const match = TaskFlowStore.calculateBestExpertMatch(task)
       if (match) {
-        TaskFlowStore.assignTask(task.id, match.employee.profile_id, 'TaskFlow AI Auto-Router')
+        TaskFlowStore.assignTask(task.id, match.employee.profile_id, 'Probyzaar Technologies Auto-Router')
         count++
       }
     })

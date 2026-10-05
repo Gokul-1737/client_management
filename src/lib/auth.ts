@@ -1,4 +1,4 @@
-// TaskFlow AI - Unified Authentication & Session Management
+// Probyzaar Technologies - Unified Authentication & Session Management
 
 import { UserRole, Profile } from './types'
 
@@ -84,9 +84,82 @@ export function setCurrentUser(user: Profile | null) {
   }
 }
 
-export function logout() {
+export function getDemoUserForRole(role: UserRole): Profile {
+  const user = role === 'ADMIN'
+    ? DEMO_USERS.admin
+    : role === 'EMPLOYEE'
+      ? DEMO_USERS.employee_karthik
+      : DEMO_USERS.client
+  if (typeof window === 'undefined') return user
+  const stored = localStorage.getItem('taskflow_user')
+  if (!stored) return user
+  try {
+    const parsed = JSON.parse(stored) as Profile
+    return parsed.id === user.id ? { ...user, ...parsed } : user
+  } catch {
+    return user
+  }
+}
+
+export function notifyProfileUpdated(user: Profile) {
+  setCurrentUser(user)
+  window.dispatchEvent(new CustomEvent('taskflow_profile_updated', { detail: user }))
+}
+
+export async function updateProfile(profile: Profile, changes: Partial<Profile>): Promise<Profile> {
+  const nextProfile = {
+    ...profile,
+    ...changes,
+    updated_at: new Date().toISOString(),
+  }
+
+  const configured = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  )
+
+  if (configured && !profile.id.startsWith('u0000000-')) {
+    const { createClient } = await import('./supabase/client')
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: nextProfile.full_name,
+        email: nextProfile.email,
+        phone: nextProfile.phone,
+        avatar_url: nextProfile.avatar_url,
+        updated_at: nextProfile.updated_at,
+      })
+      .eq('id', profile.id)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    notifyProfileUpdated({ ...nextProfile, ...data })
+    return { ...nextProfile, ...data }
+  }
+
+  notifyProfileUpdated(nextProfile)
+  return nextProfile
+}
+
+export async function logout() {
+  const configured = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY &&
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')
+  )
+
+  if (configured) {
+    const { createClient } = await import('./supabase/client')
+    const { error } = await createClient().auth.signOut()
+    if (error) {
+      console.error('Unable to end the Supabase session cleanly.', error)
+    }
+  }
+
   setCurrentUser(null)
   if (typeof window !== 'undefined') {
-    window.location.href = '/login'
+    window.location.replace('/login')
   }
 }

@@ -32,7 +32,7 @@ export default function ClientSettingsPage() {
             <Bell className="w-5 h-5 text-indigo-600" />
             <div>
               <h3 className="text-sm font-bold text-slate-900">Notification Preferences</h3>
-              <p className="text-xs text-slate-500">Choose when and how TaskFlow AI notifies your team</p>
+              <p className="text-xs text-slate-500">Choose when and how Probyzaar Technologies notifies your team</p>
             </div>
           </div>
 

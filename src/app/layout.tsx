@@ -4,18 +4,18 @@ import { ToastProvider } from '@/components/ui/toast'
 
 export const metadata: Metadata = {
   title: {
-    default: 'TaskFlow AI - Client Task Management Platform',
-    template: '%s | TaskFlow AI',
+    default: 'Probyzaar Technologies - Client Task Management Platform',
+    template: '%s | Probyzaar Technologies',
   },
-  description: 'AI-Powered Client Task Management & Automated Expert Assignment Platform. Streamline your workflow with intelligent task routing and real-time progress tracking.',
+  description: 'Probyzaar Technologies client task management workspace for intelligent routing and real-time delivery tracking.',
   keywords: ['task management', 'AI automation', 'expert assignment', 'workflow', 'project management'],
-  authors: [{ name: 'TaskFlow AI' }],
+  authors: [{ name: 'Probyzaar Technologies' }],
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    title: 'TaskFlow AI - Intelligent Task Management',
-    description: 'AI-Powered Client Task Management & Automated Expert Assignment Platform',
-    siteName: 'TaskFlow AI',
+    title: 'Probyzaar Technologies - Intelligent Task Management',
+    description: 'A focused workspace for client delivery, expert collaboration, and task operations.',
+    siteName: 'Probyzaar Technologies',
   },
 }
 

@@ -136,7 +136,7 @@ export default function AdminTasksPage() {
                       </td>
 
                       <td className="py-3.5 px-4 font-medium text-slate-700">
-                        {task.client_name || 'Acme Corp'}
+                        {task.client_name || 'Client organization'}
                       </td>
 
                       <td className="py-3.5 px-4">

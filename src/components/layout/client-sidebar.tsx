@@ -2,11 +2,13 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Avatar } from '@/components/ui/avatar'
 import { useToast } from '@/components/ui/toast'
+import { getDemoUserForRole, getCurrentUser, logout } from '@/lib/auth'
+import { BrandLogo } from '@/components/layout/brand-logo'
+import type { Profile } from '@/lib/types'
 import {
   LayoutDashboard,
   ClipboardList,
@@ -19,7 +21,6 @@ import {
   Settings,
   HelpCircle,
   LogOut,
-  Zap,
   ChevronDown,
 } from 'lucide-react'
 
@@ -36,7 +37,7 @@ interface NavGroup {
 }
 
 interface SidebarProps {
-  user?: { name?: string; email?: string; avatar?: string }
+  user?: Partial<Profile>
   notificationCount?: number
 }
 
@@ -84,29 +85,26 @@ const navGroups: NavGroup[] = [
 
 export function ClientSidebar({ user, notificationCount = 0 }: SidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const { success } = useToast()
   const [userMenuOpen, setUserMenuOpen] = React.useState(false)
+  const [currentUser, setCurrentUser] = React.useState(user || (typeof window !== 'undefined' ? getCurrentUser() || getDemoUserForRole('CLIENT') : undefined))
+
+  React.useEffect(() => {
+    const loadUser = () => setCurrentUser(getCurrentUser() || getDemoUserForRole('CLIENT'))
+    window.addEventListener('taskflow_profile_updated', loadUser)
+    return () => window.removeEventListener('taskflow_profile_updated', loadUser)
+  }, [])
 
   const handleSignOut = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
     success('Signed out successfully')
-    router.push('/login')
-    router.refresh()
+    await logout()
   }
 
   return (
     <aside className="sticky top-0 z-40 flex h-screen min-h-screen w-[15.5rem] flex-shrink-0 flex-col border-r border-slate-200/80 bg-[#fbfcfe]">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 border-b border-slate-100 px-5 py-[1.125rem]">
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[0.625rem] bg-primary-600">
-          <Zap className="w-4 h-4 text-white" />
-        </div>
-        <div>
-          <div className="text-sm font-bold text-slate-900 leading-none">TaskFlow AI</div>
-          <div className="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider">Client Portal</div>
-        </div>
+      <div className="border-b border-slate-100 px-5 py-4">
+      <BrandLogo portal="Client portal" compact />
       </div>
 
       {/* Navigation */}
@@ -155,10 +153,10 @@ export function ClientSidebar({ user, notificationCount = 0 }: SidebarProps) {
           onClick={() => setUserMenuOpen(!userMenuOpen)}
           className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-50 transition-colors text-left"
         >
-          <Avatar name={user?.name || 'Client'} src={user?.avatar} size="sm" />
+          <Avatar name={currentUser?.full_name || currentUser?.name || 'Client'} src={currentUser?.avatar_url || currentUser?.avatar} size="sm" />
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-slate-900 truncate">{user?.name || 'Client User'}</div>
-            <div className="text-xs text-slate-400 truncate">{user?.email}</div>
+            <div className="text-sm font-medium text-slate-900 truncate">{currentUser?.full_name || currentUser?.name || 'Client User'}</div>
+            <div className="text-xs text-slate-400 truncate">{currentUser?.email}</div>
           </div>
           <ChevronDown className={cn('w-4 h-4 text-slate-400 flex-shrink-0 transition-transform', userMenuOpen && 'rotate-180')} />
         </button>

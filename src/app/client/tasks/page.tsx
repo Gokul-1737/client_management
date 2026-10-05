@@ -20,6 +20,7 @@ import {
   Clock,
   ArrowRight,
   FolderOpen,
+  Trash2,
 } from 'lucide-react'
 
 export default function ClientTasksPage() {
@@ -32,6 +33,13 @@ export default function ClientTasksPage() {
 
   const loadData = () => {
     setTasks(TaskFlowStore.getTasks())
+  }
+
+  const handleDeleteTask = (task: Task) => {
+    if (!window.confirm(`Delete "${task.title}"? This action cannot be undone.`)) return
+    if (TaskFlowStore.deleteTask(task.id)) {
+      loadData()
+    }
   }
 
   useEffect(() => {
@@ -258,17 +266,31 @@ export default function ClientTasksPage() {
                         </td>
 
                         <td className="py-3.5 px-4 text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
-                            onClick={e => {
-                              e.stopPropagation()
-                              router.push(`/client/tasks/${task.id}`)
-                            }}
-                          >
-                            View
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                              onClick={e => {
+                                e.stopPropagation()
+                                router.push(`/client/tasks/${task.id}`)
+                              }}
+                            >
+                              View
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              aria-label={`Delete ${task.title}`}
+                              className="text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                              onClick={e => {
+                                e.stopPropagation()
+                                handleDeleteTask(task)
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     )
@@ -353,9 +375,22 @@ export default function ClientTasksPage() {
                             ) : (
                               <span className="italic text-slate-400">Unassigned</span>
                             )}
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3 text-slate-400" />
-                              <span>{task.end_date?.slice(5) || 'TBD'}</span>
+                            <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3 text-slate-400" />
+                                <span>{task.end_date?.slice(5) || 'TBD'}</span>
+                              </div>
+                              <button
+                                type="button"
+                                aria-label={`Delete ${task.title}`}
+                                className="rounded p-1 text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700"
+                                onClick={event => {
+                                  event.stopPropagation()
+                                  handleDeleteTask(task)
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
                             </div>
                           </div>
                         </Card>

@@ -21,6 +21,7 @@ import {
 import { cn } from '@/lib/utils'
 import { setCurrentUser } from '@/lib/auth'
 import { Profile } from '@/lib/types'
+import { BrandLogo } from '@/components/layout/brand-logo'
 
 function LoginForm() {
   const router = useRouter()
@@ -88,6 +89,21 @@ function LoginForm() {
           updated_at: profile.updated_at,
         }
 
+        const { data: membership } = await supabase
+          .from('company_members')
+          .select('company_id')
+          .eq('profile_id', data.user.id)
+          .maybeSingle()
+
+        if (membership) {
+          const { data: company } = await supabase
+            .from('companies')
+            .select('name')
+            .eq('id', membership.company_id)
+            .maybeSingle()
+          userProfile.company_name = company?.name
+        }
+
         setCurrentUser(userProfile)
         success('Welcome back', `Signed in as ${userProfile.full_name}`)
 
@@ -119,15 +135,7 @@ function LoginForm() {
 
         {/* Logo */}
         <div className="relative">
-          <Link href="/" className="inline-flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner group-hover:scale-105 transition-transform">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <span className="text-2xl font-bold tracking-tight">TaskFlow AI</span>
-              <span className="block text-xs text-indigo-200 tracking-wide font-medium uppercase">Client Portal</span>
-            </div>
-          </Link>
+          <BrandLogo portal="Client portal" dark />
         </div>
 
         {/* Hero content */}
@@ -137,7 +145,7 @@ function LoginForm() {
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
               <span>Enterprise Client Workspace</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-white leading-tight">
+            <h1 className="text-2xl md:text-[1.7rem] font-extrabold text-white leading-tight">
               Track Projects, Approve Deliverables, and Collaborate with Top Experts
             </h1>
             <p className="text-indigo-100 text-sm leading-relaxed max-w-md">
@@ -201,7 +209,7 @@ function LoginForm() {
               <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-sm">
                 <Zap className="w-5 h-5" />
               </div>
-              <span className="text-xl font-bold text-slate-900">TaskFlow AI</span>
+              <BrandLogo portal="Client portal" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Sign in to Client Portal</h2>
             <p className="text-slate-500 text-sm mt-1">Access your project deliverables, milestones, and task dashboard.</p>

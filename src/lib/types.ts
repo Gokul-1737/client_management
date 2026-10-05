@@ -1,4 +1,4 @@
-// TaskFlow AI - Type Definitions
+// Probyzaar Technologies - Type Definitions
 
 export type UserRole = 'CLIENT' | 'ADMIN' | 'EMPLOYEE'
 
@@ -54,6 +54,7 @@ export interface Profile {
   avatar_url?: string
   avatar?: string
   phone?: string
+  company_name?: string
   title?: string
   workload_percentage?: number
   created_at?: string

@@ -22,10 +22,12 @@ import {
   Calendar,
   Sparkles,
 } from 'lucide-react'
+import { getCurrentUser, getDemoUserForRole } from '@/lib/auth'
 
 export default function ClientDashboardPage() {
   const router = useRouter()
   const [tasks, setTasks] = useState<Task[]>([])
+  const [companyName, setCompanyName] = useState(() => getCurrentUser()?.company_name || getDemoUserForRole('CLIENT').company_name || 'Acme Corporation')
 
   const loadData = () => {
     setTasks(TaskFlowStore.getTasks())
@@ -33,9 +35,16 @@ export default function ClientDashboardPage() {
 
   useEffect(() => {
     loadData()
+    const loadProfile = () => setCompanyName(getCurrentUser()?.company_name || 'Acme Corporation')
+    loadProfile()
     const handleUpdate = () => loadData()
+    const handleProfileUpdate = () => loadProfile()
     window.addEventListener('taskflow_store_updated', handleUpdate)
-    return () => window.removeEventListener('taskflow_store_updated', handleUpdate)
+    window.addEventListener('taskflow_profile_updated', handleProfileUpdate)
+    return () => {
+      window.removeEventListener('taskflow_store_updated', handleUpdate)
+      window.removeEventListener('taskflow_profile_updated', handleProfileUpdate)
+    }
   }, [])
 
   const activeTasks = tasks.filter(t => !['COMPLETED', 'CLOSED'].includes(t.status))
@@ -60,7 +69,7 @@ export default function ClientDashboardPage() {
                 <span>AI Automated Skill & Expert Routing Active</span>
               </div>
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
-                Welcome back, Acme Corp
+                Welcome back, {companyName}
               </h2>
               <p className="text-indigo-100 text-sm leading-relaxed">
                 You have <span className="font-semibold text-white">{readyForReviewOrDelivery.length} deliverables</span> awaiting review or final acceptance.
